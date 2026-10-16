@@ -1,0 +1,27 @@
+import { Router } from 'express';
+import { requireAuth } from './middleware/auth.js';
+import { authRoutes } from './modules/auth/routes.js';
+import { alphaRoutes } from './modules/alphas/routes.js';
+import { userRoutes } from './modules/users/routes.js';
+import { folderRoutes } from './modules/folders/routes.js';
+import { brainRoutes } from './modules/brain/routes.js';
+import { simulationRoutes } from './modules/simulations/routes.js';
+import { experimentRoutes } from './modules/experiments/routes.js';
+import { datafieldRoutes, operatorRoutes } from './modules/datafields/routes.js';
+import { lintRoutes } from './modules/lint/routes.js';
+import { aiRoutes } from './modules/ai/routes.js';
+import { authLimiter, simulationLimiter } from './middleware/rateLimit.js';
+
+const routes = Router();
+routes.use('/auth', authLimiter, authRoutes);
+routes.use('/users', requireAuth, userRoutes);
+routes.use('/alphas', requireAuth, alphaRoutes);
+routes.use('/folders', requireAuth, folderRoutes);
+routes.use('/brain', requireAuth, brainRoutes);
+routes.use('/simulations', requireAuth, simulationLimiter, simulationRoutes);
+routes.use('/experiments', requireAuth, simulationLimiter, experimentRoutes);
+routes.use('/datafields', requireAuth, datafieldRoutes);
+routes.use('/operators', requireAuth, operatorRoutes);
+routes.use('/lint', requireAuth, lintRoutes);
+routes.use('/ai', requireAuth, aiRoutes);
+export default routes;

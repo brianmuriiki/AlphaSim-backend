@@ -1,0 +1,55 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports: ["27017:27017"]
+    volumes: ["mongo-data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports: ["6379:6379"]
+    volumes: ["redis-data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  mock-brain:
+    build: .
+    command: ["npm", "run", "dev:mock-brain"]
+    environment:
+      MOCK_BRAIN_PORT: 4011
+    ports: ["4011:4011"]
+  api:
+    build: .
+    env_file: .env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/alphasim
+      REDIS_URL: redis://redis:6379
+      MOCK_BRAIN_URL: http://mock-brain:4011
+    command: ["npm", "run", "dev:api"]
+    ports: ["4000:4000"]
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      mock-brain: { condition: service_started }
+  worker:
+    build: .
+    env_file: .env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/alphasim
+      REDIS_URL: redis://redis:6379
+      MOCK_BRAIN_URL: http://mock-brain:4011
+    command: ["npm", "run", "dev:worker"]
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      mock-brain: { condition: service_started }
+volumes:
+  mongo-data:
+  redis-data:
